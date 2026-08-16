@@ -3,10 +3,10 @@ import html
 from pathlib import Path
 import streamlit as st
 
-st.set_page_config(page_title="PCNA Assistant", page_icon="🔷", layout="centered", initial_sidebar_state="collapsed")
+LOGO_PATH = Path(__file__).with_name("PCNA_Logo_PMS_FINAL_TM_Transparent.png")
+st.set_page_config(page_title="PCNA Assistant", page_icon=str(LOGO_PATH), layout="centered", initial_sidebar_state="collapsed")
 
 HERO = "https://assets.pcna.com/image/upload/f_auto,q_auto/Mkt_Dept/2026%20Jobs/2026-0810_Web_Messaging/0810_Web_PCNA_Hero_m.gif"
-LOGO_PATH = Path(__file__).with_name("PCNA_Logo_PMS_FINAL_TM_Transparent.png")
 LOGO_DATA = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
 
 st.markdown("""
@@ -15,10 +15,8 @@ st.markdown("""
 *{box-sizing:border-box}.stApp{background:var(--paper);color:var(--ink)}
 [data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],.stDeployButton{display:none!important}
 [data-testid="stAppViewContainer"]>.main{padding:0!important}.block-container{padding:0 14px 104px!important;max-width:520px!important}
-.top{height:88px;display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;padding:10px 8px 0}
-.menu,.bell{font-size:30px;color:var(--navy);text-align:center}.brand-logo{display:block;width:min(220px,100%);height:48px;object-fit:contain;margin:auto}
-.hero{height:195px;border-radius:16px;overflow:hidden;background:#062e63;position:relative;box-shadow:0 4px 14px #001e4933;margin:0 0 16px}.hero img{width:100%;height:100%;object-fit:cover}.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#031f4ae6 0%,#062d5988 46%,transparent 72%)}
-.hero-copy{position:absolute;z-index:2;left:21px;top:19px;color:white;width:55%}.hero-copy h1{font-size:25px;line-height:.98;margin:0 0 9px;font-weight:900;letter-spacing:-1px}.hero-copy p{font-size:11px;line-height:1.35;margin:0 0 13px}.shop{display:inline-block;border:1px solid white;border-radius:4px;padding:7px 14px;font-size:11px;font-weight:800}
+.top{height:88px;display:flex;align-items:center;justify-content:center;padding:10px 8px 0}.brand-logo{display:block;width:min(220px,100%);height:48px;object-fit:contain;margin:auto}
+.hero{height:195px;border-radius:16px;overflow:hidden;background:#062e63;position:relative;box-shadow:0 4px 14px #001e4933;margin:0 0 16px}.hero img{display:block;width:100%;height:100%;object-fit:cover}
 .section-title{font-size:25px;font-weight:900;letter-spacing:-.7px;margin:0 0 13px 10px}.section-title:after{content:"";display:block;width:32px;border-bottom:3px solid #2ca4dc;padding-top:6px}
 [data-testid="stVerticalBlock"]{gap:0!important}[data-testid="stHorizontalBlock"]{gap:12px!important;margin-bottom:12px}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{height:188px;background:#fff;border:1px solid #d8e7f5;border-radius:15px;padding:14px 13px;position:relative;overflow:hidden;box-shadow:0 3px 12px #0b5aa52a;cursor:pointer}.badge{height:34px;width:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#063f87,#001e53);color:white;font-size:21px}.card h3{font-size:18px;line-height:1.05;margin:13px 0 9px;font-weight:900;max-width:108px;letter-spacing:-.5px}.card p{font-size:11px;line-height:1.45;margin:0;max-width:106px}.art{position:absolute;right:-8px;top:23px;width:49%;height:148px;display:grid;place-items:center;font-size:64px;filter:drop-shadow(0 8px 7px #132b4c38)}.go{position:absolute;right:9px;bottom:8px;width:31px;height:31px;border-radius:50%;background:#064993;color:white;display:grid;place-items:center;font-size:23px;font-weight:300}
@@ -39,8 +37,8 @@ def nav():
     st.markdown('''<div class="bottom"><div class="nav active"><b>⌂</b>Home</div><div class="nav"><b>▱</b>Projects</div><div class="nav"><b>◇</b>Products</div><div class="nav"><b>○</b>Messages</div><div class="nav"><b>♙</b>Account</div></div>''', unsafe_allow_html=True)
 
 if st.session_state.view == "home":
-    st.markdown(f'''<div class="top"><div class="menu">☰</div><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"><div class="bell">♧</div></div>''', unsafe_allow_html=True)
-    st.markdown(f'''<div class="hero"><img src="{HERO}" alt="PCNA products"><div class="hero-copy"><h1>Branded.<br>Merchandise.<br>Delivered.</h1><p>Explore thousands of promotional products to elevate your brand.</p><span class="shop">SHOP NOW</span></div></div>''', unsafe_allow_html=True)
+    st.markdown(f'''<div class="top"><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"></div>''', unsafe_allow_html=True)
+    st.markdown(f'''<a href="https://www.pcna.com/" target="_blank" aria-label="Visit PCNA.com"><div class="hero"><img src="{HERO}" alt="PCNA"></div></a>''', unsafe_allow_html=True)
     st.markdown('<h2 class="section-title">What do you need?</h2>', unsafe_allow_html=True)
     cards = [
         ("✓", "Spec Sample<br>Order", "Tell Nova what you need and build the verified PCNA order.", "🎒", "spec"),
@@ -56,7 +54,7 @@ if st.session_state.view == "home":
     nav()
 else:
     labels = {"spec":"Spec Sample Order","virtual":"Virtuals / Designs","quote":"Quote Request","projects":"Projects"}
-    st.markdown(f'<div class="top"><div class="menu">☰</div><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"><div class="bell">♧</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="top"><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"></div>', unsafe_allow_html=True)
     st.button("← Back to Home", on_click=go, args=("home",))
     title = labels[st.session_state.view]
     st.markdown(f'<div class="workspace-title">{html.escape(title)}</div>', unsafe_allow_html=True)
