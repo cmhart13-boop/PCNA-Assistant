@@ -1,13 +1,26 @@
 import base64
 import html
+from io import BytesIO
 from pathlib import Path
+
 import streamlit as st
+from PIL import Image
 
 LOGO_PATH = Path(__file__).with_name("PCNA_Logo_PMS_FINAL_TM_Transparent.png")
 st.set_page_config(page_title="PCNA Assistant", page_icon=str(LOGO_PATH), layout="centered", initial_sidebar_state="collapsed")
 
-HERO = "https://assets.pcna.com/image/upload/f_auto,q_auto/Mkt_Dept/2026%20Jobs/2026-0810_Web_Messaging/0810_Web_PCNA_Hero_m.gif"
-LOGO_DATA = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+HERO = "https://assets.pcna.com/image/upload/f_auto,q_auto/Mkt_Dept/2026%20Jobs/2026-0810_Web_Messaging/0810_Web_PCNA_Hero_m.gif?v=202608161600"
+
+# Use the official PCNA logo file from the repo, but crop transparent padding so
+# the real artwork fills the header instead of rendering as a tiny square.
+_logo = Image.open(LOGO_PATH).convert("RGBA")
+_alpha = _logo.getchannel("A")
+_bbox = _alpha.getbbox()
+if _bbox:
+    _logo = _logo.crop(_bbox)
+_logo_buffer = BytesIO()
+_logo.save(_logo_buffer, format="PNG", optimize=True)
+LOGO_DATA = base64.b64encode(_logo_buffer.getvalue()).decode("ascii")
 
 st.markdown("""
 <style>
@@ -15,7 +28,8 @@ st.markdown("""
 *{box-sizing:border-box}.stApp{background:var(--paper);color:var(--ink)}
 [data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],.stDeployButton{display:none!important}
 [data-testid="stAppViewContainer"]>.main{padding:0!important}.block-container{padding:0 14px 104px!important;max-width:520px!important}
-.top{height:88px;display:flex;align-items:center;justify-content:center;padding:10px 8px 0}.brand-logo{display:block;width:min(220px,100%);height:48px;object-fit:contain;margin:auto}
+.top{height:88px;display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;padding:10px 8px 0}
+.menu,.bell{font-size:30px;color:var(--navy);text-align:center}.brand-logo{display:block;width:min(220px,100%);height:48px;object-fit:contain;margin:auto}
 .hero{height:195px;border-radius:16px;overflow:hidden;background:#062e63;position:relative;box-shadow:0 4px 14px #001e4933;margin:0 0 16px}.hero img{display:block;width:100%;height:100%;object-fit:cover}
 .section-title{font-size:25px;font-weight:900;letter-spacing:-.7px;margin:0 0 13px 10px}.section-title:after{content:"";display:block;width:32px;border-bottom:3px solid #2ca4dc;padding-top:6px}
 [data-testid="stVerticalBlock"]{gap:0!important}[data-testid="stHorizontalBlock"]{gap:12px!important;margin-bottom:12px}
@@ -37,7 +51,7 @@ def nav():
     st.markdown('''<div class="bottom"><div class="nav active"><b>⌂</b>Home</div><div class="nav"><b>▱</b>Projects</div><div class="nav"><b>◇</b>Products</div><div class="nav"><b>○</b>Messages</div><div class="nav"><b>♙</b>Account</div></div>''', unsafe_allow_html=True)
 
 if st.session_state.view == "home":
-    st.markdown(f'''<div class="top"><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"></div>''', unsafe_allow_html=True)
+    st.markdown(f'''<div class="top"><div class="menu">☰</div><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"><div class="bell">♧</div></div>''', unsafe_allow_html=True)
     st.markdown(f'''<a href="https://www.pcna.com/" target="_blank" aria-label="Visit PCNA.com"><div class="hero"><img src="{HERO}" alt="PCNA"></div></a>''', unsafe_allow_html=True)
     st.markdown('<h2 class="section-title">What do you need?</h2>', unsafe_allow_html=True)
     cards = [
@@ -54,7 +68,7 @@ if st.session_state.view == "home":
     nav()
 else:
     labels = {"spec":"Spec Sample Order","virtual":"Virtuals / Designs","quote":"Quote Request","projects":"Projects"}
-    st.markdown(f'<div class="top"><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="top"><div class="menu">☰</div><img class="brand-logo" src="data:image/png;base64,{LOGO_DATA}" alt="PCNA"><div class="bell">♧</div></div>', unsafe_allow_html=True)
     st.button("← Back to Home", on_click=go, args=("home",))
     title = labels[st.session_state.view]
     st.markdown(f'<div class="workspace-title">{html.escape(title)}</div>', unsafe_allow_html=True)
