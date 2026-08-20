@@ -1,6 +1,9 @@
 import html
+import re
 from pathlib import Path
 import streamlit as st
+
+from pcna_api import PCNAClient, PCNAAPIError, DEFAULT_ENDPOINTS
 
 LOGO_PATH = Path(__file__).with_name("PCNA_Logo_PMS_FINAL_TM_Transparent.png")
 st.set_page_config(page_title="PCNA Assistant", page_icon=str(LOGO_PATH), layout="centered", initial_sidebar_state="collapsed")
@@ -24,6 +27,7 @@ st.markdown('''
 .mobile-note{display:none}@media(min-width:700px){.mobile-note{display:block;text-align:center;font-size:12px;color:#627087;padding:8px}.block-container{max-width:548px!important}}
 button[kind="secondary"]{height:188px;position:absolute;opacity:0;z-index:4}
 .workspace-title{font-size:29px;font-weight:900;color:var(--ink);margin:8px 0}.backlink{font-size:13px;color:#215b94}.hint{color:#65758d;font-size:13px;line-height:1.5}.stTextArea textarea{min-height:190px;border-radius:13px}.stButton button{background:#063d7d;color:white;border:0;border-radius:11px;font-weight:800;width:100%}
+.api-ok{padding:10px 12px;border-radius:11px;background:#e9f8ef;color:#185b35;font-size:12px;font-weight:800;margin:8px 0 12px}.api-off{padding:10px 12px;border-radius:11px;background:#fff4dd;color:#724c00;font-size:12px;font-weight:800;margin:8px 0 12px}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -38,6 +42,33 @@ def nav():
 
 def header():
     st.markdown(f'<div class="top"><div class="menu">☰</div><img class="brand-logo" src="{LOGO_URL}" alt="PCNA"><div class="bell">♧</div></div>', unsafe_allow_html=True)
+
+def _secret(name, default=None):
+    try:
+        return st.secrets.get(name, default)
+    except Exception:
+        return default
+
+def pcna_client():
+    access_id = _secret("PCNA_PROMOSTANDARDS_ID")
+    password = _secret("PCNA_PROMOSTANDARDS_PASSWORD")
+    if not access_id or not password:
+        return None
+    endpoints = {}
+    for key, default in DEFAULT_ENDPOINTS.items():
+        secret_key = f"PCNA_{key.upper()}_ENDPOINT"
+        endpoints[key] = _secret(secret_key, default)
+    return PCNAClient(access_id=access_id, password=password, endpoints=endpoints)
+
+def extract_pcna_item_numbers(text):
+    # PCNA styles/SKUs commonly look like 1602-39, 9898-31, 1111-08, TM16398, SM-2572.
+    patterns = [r"\b\d{4}-\d{2}[A-Z]{0,2}\b", r"\bTM\d{5}\b", r"\bSM-\d{4}\b"]
+    found = []
+    for pattern in patterns:
+        for item in re.findall(pattern, text.upper()):
+            if item not in found:
+                found.append(item)
+    return found
 
 if st.session_state.view == "home":
     header()
@@ -64,12 +95,38 @@ else:
     if st.session_state.view == "projects":
         st.info("Your completed requests will be saved here.")
     else:
+        client = pcna_client()
+        if client:
+            st.markdown('<div class="api-ok">✓ PCNA PromoStandards data connection configured</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="api-off">PCNA API code is installed. Add the production access ID/password in Streamlit Secrets to turn on live data.</div>', unsafe_allow_html=True)
+
         st.markdown('<p class="hint">Tell Nova exactly what you need. Include product, color, decoration, quantity and delivery details when applicable.</p>', unsafe_allow_html=True)
         request = st.text_area("Your request", placeholder="Describe the PCNA request…")
         customer = st.text_input("Customer or project name")
+
         if st.button(f"Create {title}"):
-            if request.strip():
-                st.success("Request captured. Connect the PCNA data bridge and OpenAI secret in Streamlit to generate the verified file.")
-            else:
+            if not request.strip():
                 st.warning("Describe what you need first.")
+            elif st.session_state.view == "spec":
+                item_numbers = extract_pcna_item_numbers(request)
+                if not item_numbers:
+                    st.warning("I couldn't find a PCNA item number in the request yet.")
+                elif not client:
+                    st.error("Live PCNA verification is ready in the app code, but the production access credentials still need to be stored in Streamlit Secrets.")
+                else:
+                    st.session_state["pcna_verified"] = {}
+                    with st.spinner("Verifying directly with PCNA…"):
+                        for item in item_numbers:
+                            try:
+                                st.session_state["pcna_verified"][item] = client.get_product_bundle(item)
+                            except PCNAAPIError as exc:
+                                st.session_state["pcna_verified"][item] = {"error": str(exc)}
+                    st.success(f"Verified {len(item_numbers)} PCNA item(s) directly through PromoStandards.")
+                    for item, data in st.session_state["pcna_verified"].items():
+                        with st.expander(f"PCNA verified data — {item}"):
+                            st.json(data)
+                    st.info("This verified PCNA data is now attached to the spec request so decoration, product details and inventory can be generated from the API instead of guessed.")
+            else:
+                st.success("Request captured.")
     nav()
